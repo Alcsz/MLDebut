@@ -1,0 +1,97 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Apr 16 13:22:04 2021
+
+@author: Alain
+"""
+
+import pandas as pd
+import numpy as np
+import tensorflow as tf
+import os
+import cv2
+import matplotlib.pyplot as plt
+import tqdm
+import tensorflow.keras as keras
+from tensorflow.keras.layers import Dense,Conv2D, MaxPooling2D, Flatten, Dropout
+from tensorflow.keras.losses import BinaryCrossentropy
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MultiLabelBinarizer
+mlb=MultiLabelBinarizer()
+import matplotlib.pyplot as plt
+
+path='C:/Users/Alain/Desktop/sample/sample_labels.csv'
+path2='C:/Users/Alain/Desktop/sample/sample/images'
+
+df=pd.read_csv(path)
+df=df[:1500]
+df=df.drop(df.iloc[:,2:],axis=1)
+img_list=[]
+label_list=[]
+
+for k in range(0,df["Image Index"].shape[0]):
+    df["Finding Labels"][k]=df["Finding Labels"][k].split("|")
+    label_list=mlb.fit_transform(df["Finding Labels"])
+#df_encoded=pd.get_dummies(df["Finding Labels"])
+#print(df_encoded)
+
+for k in range(0,df["Image Index"].shape[0]):
+    img=cv2.imread(os.path.join(path2,(df["Image Index"][k])),cv2.IMREAD_GRAYSCALE)
+    img_r=cv2.resize(img,(56,56))
+    img_list.append(img_r)
+      
+y=np.array(label_list).reshape(-1)
+X=np.asarray(img_list).reshape((df["Image Index"].shape[0]),56,56,1)
+X=X/255
+
+X=np.asarray(X).astype(np.float32)
+y=np.asarray(label_list).astype(np.float32) 
+X_train,X_test,y_train,y_test=train_test_split(X,y, test_size=0.3)
+
+class CustomCallback(keras.callbacks.Callback):
+    def on_epoch_end(self,epoch,logs=None):
+        np.random.shuffle(img_list)
+        print('Données mélangées !')
+
+
+model=keras.models.Sequential()
+
+model.add(Conv2D(32, kernel_size=(3,3),activation="relu",input_shape=(56,56,1)))
+model.add(MaxPooling2D(pool_size=(2,2)))
+model.add(Dropout(0.25))
+
+model.add(Conv2D(64, kernel_size=(3,3), activation='relu'))
+model.add(MaxPooling2D(pool_size=(2,2)))
+model.add(Conv2D(64, kernel_size=(3,3), activation='relu'))
+model.add(MaxPooling2D(pool_size=(2,2)))
+model.add(Dropout(0.25))
+          
+model.add(Flatten())
+model.add(Dense(512,activation='relu'))
+model.add(Dropout(0.5))
+model.add(Dense(15,activation='sigmoid'))
+
+model.summary()
+
+model.compile(optimizer='adam',
+              loss=BinaryCrossentropy(),
+              metrics='accuracy')
+
+history=model.fit(X_train, y_train, epochs=15, validation_split=0.2,callbacks=[CustomCallback()])
+plt.plot(history.history['loss'],label='loss')
+plt.plot(history.history['val_loss'],label='validation loss')
+plt.legend(loc='upper left')
+plt.show
+
+img_test_path='C:/Users/Alain/Desktop/chest_xray/train/PNEUMONIA/person124_virus_238.jpeg'
+img_test=cv2.imread(img_test_path,cv2.IMREAD_GRAYSCALE)
+img_test_r=cv2.resize(img_test,(56,56))
+
+X_test=np.array(img_test_r).reshape(1,56,56,1)
+
+prediction=np.round(model.predict(X_test))
+print(prediction)
+class_result=mlb.inverse_transform(prediction)
+print(class_result)
+
+plt.imshow(img_test)
