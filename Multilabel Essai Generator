@@ -1,0 +1,69 @@
+import pandas as pd
+import numpy as np
+import tensorflow as tf
+import os
+import cv2
+import matplotlib.pyplot as plt
+import tqdm
+import tensorflow.keras as keras
+from tensorflow.keras.layers import Dense,Conv2D, MaxPooling2D, Flatten, Dropout
+from tensorflow.keras.losses import BinaryCrossentropy
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MultiLabelBinarizer
+mlb=MultiLabelBinarizer()
+import matplotlib.pyplot as plt
+from keras_preprocessing.image import ImageDataGenerator
+
+path='C:/Users/Alain/Desktop/sample/sample_labels.csv'
+path2='C:/Users/Alain/Desktop/sample/sample/images'
+
+df=pd.read_csv(path)
+df=df[:1800]
+df=df.drop(df.iloc[:,2:],axis=1)
+df['Finding Labels']=df['Finding Labels'].str.split(',')
+
+train_datagen=ImageDataGenerator(rescale=1/255)
+
+train_generator=train_datagen.flow_from_dataframe(
+dataframe=df,
+directory=path2,
+x_col="Image Index",
+y_col="Finding Labels",
+batch_size=32,
+seed=42,
+shuffle=True,
+class_mode='categorical',
+classes=['Atelectasis', 'Consolidation', 'Infiltration', 'Pneumothorax', 'Edema', 'Emphysema', 'Fibrosis', 'Effusion', 'Pneumonia', 'Pleural_Thickening', 
+'Cardiomegaly', 'Nodule', 'Mass', 'Hernia','No Finding'],
+colormode='grayscale',
+target_size=(100,100))
+
+
+model=keras.models.Sequential()
+
+model.add(Conv2D(32, kernel_size=(3,3),activation="relu",input_shape=(100,100,3)))
+model.add(MaxPooling2D(pool_size=(2,2)))
+model.add(Dropout(0.25))
+
+model.add(Conv2D(64, kernel_size=(3,3), activation='relu'))
+model.add(MaxPooling2D(pool_size=(2,2)))
+model.add(Conv2D(64, kernel_size=(3,3), activation='relu'))
+model.add(MaxPooling2D(pool_size=(2,2)))
+model.add(Dropout(0.25))
+          
+model.add(Flatten())
+model.add(Dense(512,activation='relu'))
+model.add(Dropout(0.5))
+model.add(Dense(15,activation='sigmoid'))
+
+model.summary()
+
+model.compile(optimizer='adam',
+              loss=BinaryCrossentropy(),
+              metrics='accuracy')
+
+history=model.fit_generator(train_generator, epochs=15)
+plt.plot(history.history['loss'],label='loss')
+plt.plot(history.history['val_loss'],label='validation loss')
+plt.legend(loc='upper right')
+plt.show
