@@ -82,16 +82,3 @@ plt.plot(history.history['loss'],label='loss')
 plt.plot(history.history['val_loss'],label='validation loss')
 plt.legend(loc='upper left')
 plt.show
-
-img_test_path='C:/Users/Alain/Desktop/chest_xray/train/PNEUMONIA/person124_virus_238.jpeg'
-img_test=cv2.imread(img_test_path,cv2.IMREAD_GRAYSCALE)
-img_test_r=cv2.resize(img_test,(56,56))
-
-X_test=np.array(img_test_r).reshape(1,56,56,1)
-
-prediction=np.round(model.predict(X_test))
-print(prediction)
-class_result=mlb.inverse_transform(prediction)
-print(class_result)
-
-plt.imshow(img_test)
