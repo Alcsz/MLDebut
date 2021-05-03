@@ -48,12 +48,6 @@ X=np.asarray(X).astype(np.float32)
 y=np.asarray(label_list).astype(np.float32) 
 X_train,X_test,y_train,y_test=train_test_split(X,y, test_size=0.3)
 
-class CustomCallback(keras.callbacks.Callback):
-    def on_epoch_end(self,epoch,logs=None):
-        np.random.shuffle(img_list)
-        print('Données mélangées !')
-
-
 model=keras.models.Sequential()
 
 model.add(Conv2D(32, kernel_size=(3,3),activation="relu",input_shape=(56,56,1)))
@@ -77,7 +71,7 @@ model.compile(optimizer='adam',
               loss=BinaryCrossentropy(),
               metrics='accuracy')
 
-history=model.fit(X_train, y_train, epochs=15, validation_split=0.2,callbacks=[CustomCallback()])
+history=model.fit(X_train, y_train, epochs=15, validation_split=0.2)
 plt.plot(history.history['loss'],label='loss')
 plt.plot(history.history['val_loss'],label='validation loss')
 plt.legend(loc='upper left')
