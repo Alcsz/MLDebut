@@ -32,8 +32,6 @@ label_list=[]
 for k in range(0,df["Image Index"].shape[0]):
     df["Finding Labels"][k]=df["Finding Labels"][k].split("|")
     label_list=mlb.fit_transform(df["Finding Labels"])
-#df_encoded=pd.get_dummies(df["Finding Labels"])
-#print(df_encoded)
 
 for k in range(0,df["Image Index"].shape[0]):
     img=cv2.imread(os.path.join(path2,(df["Image Index"][k])),cv2.IMREAD_GRAYSCALE)
